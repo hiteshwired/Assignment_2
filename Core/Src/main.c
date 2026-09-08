@@ -48,13 +48,18 @@
 #define STAR_KEY           10
 #define POUND_KEY          11
 
+static const int8_t key_map[NUM_OF_ROWS][NUM_OF_COLS] = {
+    {1, 2, 3}, 
+    {4, 5, 6}, 
+    {7, 8, 9}, 
+    {STAR_KEY, 0, POUND_KEY}
+};
 
 void SystemClock_Config(void);
 
 static void gpio_init(void);
 static uint8_t read_rows(void);
 static int8_t row_to_index(uint8_t row_bits);
-static int8_t decode_key(uint8_t row, uint8_t column);
 static int8_t read_keypad(void);
 static void display_key(uint8_t key);
 
@@ -196,42 +201,6 @@ static int8_t row_to_index(uint8_t row_bits)
 
 
 /**
- * Convert a row and column location into the keypad value.
- *
- * Keypad:
- *
- *       C0   C1   C2
- * R0     1    2    3
- * R1     4    5    6
- * R2     7    8    9
- * R3     *    0    #
- */
-static int8_t decode_key(uint8_t row, uint8_t column)
-{
-    int8_t key = NO_KEY;
-
-    if (row < 3U)
-    {
-        key = (int8_t)((row * NUM_OF_COLS) +
-                       column + 1U);
-    }
-    else if (row == 3U)
-    {
-        /*
-         * TODO:
-         * Finish the bottom row.
-         *
-         * column 0 -> STAR_KEY
-         * column 1 -> 0
-         * column 2 -> POUND_KEY
-         */
-    }
-
-    return key;
-}
-
-
-/**
  * Poll the keypad and return the detected key.
  *
  * Returns NO_KEY when no button is pressed.
@@ -272,8 +241,7 @@ static int8_t read_keypad(void)
 
             if (row != NO_KEY)
             {
-                return decode_key((uint8_t)row,
-                                  column);
+              return key_map[row][column];
             }
         }
     }
