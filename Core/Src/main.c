@@ -165,8 +165,7 @@ static uint8_t read_rows(void)
 {
     uint8_t rows;
 
-    rows = (uint8_t)((ROW_PORT->IDR & ROW_PINS) >>
-                     ROW_FIRST_PIN);
+    rows = (uint8_t)((ROW_PORT->IDR & ROW_PINS) >> ROW_FIRST_PIN);
 
     return rows;
 }
@@ -269,10 +268,19 @@ static void display_key(uint8_t key)
     if (key <= 7U)
     {
         led_value = key;
-
-        LED_PORT->BRR = LED_PINS;
-        LED_PORT->BSRR = led_value;
+    } else if (key == 8U) {
+        led_value = 1U;
+    } else if (key == 9U) {
+        led_value = 2U;
+    } else if (key == STAR_KEY) {
+        led_value = 3U;
+    } else if (key == POUND_KEY) {
+        led_value = 4U;
+    } else {
+        return;
     }
+    LED_PORT->BRR = LED_PINS;
+    LED_PORT->BSRR = led_value;
 }
 
 
