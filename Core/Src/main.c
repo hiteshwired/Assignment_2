@@ -1,50 +1,43 @@
-/**
- * CPE 316 - Assignment 2: Keypad
- *
- * Reads a 4x3 matrix keypad using GPIO polling.
- * Displays a detected key value using the LEDs from A1.
- *
- * LEDs:
- *   PC0 - LED bit 0
- *   PC1 - LED bit 1
- *   PC2 - LED bit 2
- *
- * Keypad:
- *   PC4-PC7  - Rows 0-3
- *   PC8-PC10 - Columns 0-2
- */
+/*  
+LEDs:
+PC0 - LED bit 0
+PC1 - LED bit 1
+PC2 - LED bit 2
+
+Keypad:
+PC4-PC7  - Rows 0-3
+PC8-PC10 - Columns 0-2
+*/
 
 #include "main.h"
 
-
-/* Keypad dimensions */
 #define NUM_OF_ROWS        4U
 #define NUM_OF_COLS        3U
 
-/* Return value when no key is pressed */
+//Return value when no key is pressed
 #define NO_KEY             (-1)
 
-/* GPIO ports */
+// GPIO ports
 #define LED_PORT           GPIOC
 #define KEYPAD_PORT        GPIOC
 #define ROW_PORT           GPIOC
 #define COL_PORT           GPIOC
 
-/* A1 LEDs: PC0-PC2 */
+// A1 LEDs: PC0-PC2
 #define LED_PINS           (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2)
 
-/* Keypad rows: PC4-PC7 */
+//Keypad rows PC4-PC7
 #define ROW_PINS           (GPIO_PIN_4 | GPIO_PIN_5 | \
                             GPIO_PIN_6 | GPIO_PIN_7)
 
 #define ROW_FIRST_PIN      4U
 
-/* Keypad columns: PC8-PC10 */
+// Keypad columns PC8-PC10
 #define COL_PINS           (GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10)
 
 #define COL_FIRST_PIN      8U
 
-/* Optional values for the two non-numeric keys */
+//values for the two non-numeric keys
 #define STAR_KEY           10
 #define POUND_KEY          11
 
@@ -63,10 +56,6 @@ static int8_t row_to_index(uint8_t row_bits);
 static int8_t read_keypad(void);
 static void display_key(uint8_t key);
 
-
-/**
- * Main program.
- */
 int main(void)
 {
     int8_t key;
@@ -87,15 +76,13 @@ int main(void)
     }
 }
 
+//Configure LEDs and keypad GPIO pins
 
-/**
- * Configure LEDs and keypad GPIO pins.
- */
 static void gpio_init(void)
 {
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
 
-    /* PC0-PC2: LED outputs */
+    //PC0-PC2: LED outputs
     LED_PORT->MODER &= ~(GPIO_MODER_MODE0 |
                          GPIO_MODER_MODE1 |
                          GPIO_MODER_MODE2);
@@ -115,7 +102,7 @@ static void gpio_init(void)
     LED_PORT->BRR = LED_PINS;
 
 
-    /* PC4-PC7: keypad row inputs */
+    //PC4-PC7: keypad row inputs
     ROW_PORT->MODER &= ~(GPIO_MODER_MODE4 |
                          GPIO_MODER_MODE5 |
                          GPIO_MODER_MODE6 |
@@ -126,10 +113,8 @@ static void gpio_init(void)
                          GPIO_PUPDR_PUPD6 |
                          GPIO_PUPDR_PUPD7);
 
-    /*
-     * Pull-down = 10 in each PUPDR field.
-     * Set the upper bit of each two-bit field.
-     */
+    // Pull-down = 10 in each PUPDR field, Set the upper bit of each two-bit field
+
     ROW_PORT->PUPDR |= (GPIO_PUPDR_PUPD4_1 |
                         GPIO_PUPDR_PUPD5_1 |
                         GPIO_PUPDR_PUPD6_1 |
@@ -153,14 +138,14 @@ static void gpio_init(void)
                          GPIO_PUPDR_PUPD9 |
                          GPIO_PUPDR_PUPD10);
 
-    /* Columns start low */
+    //Columns start low
+
     COL_PORT->BRR = COL_PINS;
 }
 
 
-/**
- * Read PC4-PC7 and shift the rows down to bits 0-3.
- */
+//Read PC4-PC7 and shift the rows down to bits 0-3
+
 static uint8_t read_rows(void)
 {
     uint8_t rows;
@@ -171,9 +156,8 @@ static uint8_t read_rows(void)
 }
 
 
-/**
- * Convert a one-hot row reading into row number 0-3.
- */
+//Convert a row reading into row number 0-3
+
 static int8_t row_to_index(uint8_t row_bits)
 {
     int8_t row = NO_KEY;
@@ -199,18 +183,14 @@ static int8_t row_to_index(uint8_t row_bits)
 }
 
 
-/**
- * Poll the keypad and return the detected key.
- *
- * Returns NO_KEY when no button is pressed.
- */
+// Poll the keypad and return the detected key, returns NO_KEY when no button is pressed
 static int8_t read_keypad(void)
 {
     uint8_t column;
     uint8_t row_bits;
     int8_t row;
 
-    /* Stage 1: drive all columns high */
+    //drive all columns high
     COL_PORT->BSRR = COL_PINS;
 
     row_bits = read_rows();
@@ -221,18 +201,16 @@ static int8_t read_keypad(void)
         return NO_KEY;
     }
 
-    /* Stage 2: test one column at a time */
+    //test one column at a time
     COL_PORT->BRR = COL_PINS;
 
     for (column = 0U; column < NUM_OF_COLS; column++)
     {
-        COL_PORT->BSRR =
-            (1UL << (COL_FIRST_PIN + column));
+        COL_PORT->BSRR = (1UL << (COL_FIRST_PIN + column));
 
         row_bits = read_rows();
 
-        COL_PORT->BRR =
-            (1UL << (COL_FIRST_PIN + column));
+        COL_PORT->BRR = (1UL << (COL_FIRST_PIN + column));
 
         if (row_bits != 0U)
         {
@@ -249,34 +227,33 @@ static int8_t read_keypad(void)
 }
 
 
-/**
- * Display a key value on the three A1 LEDs.
- */
+// Display a key value on the three leds
 static void display_key(uint8_t key)
 {
     uint8_t led_value;
 
-    /*
-     * TODO:
-     * Decide how the assignment should represent keys
-     * greater than 7 on only three A1 LEDs.
-     *
-     * For initial testing, values 0-7 can be displayed
-     * directly.
-     */
-
     if (key <= 7U)
     {
         led_value = key;
-    } else if (key == 8U) {
+    } 
+    else if (key == 8U) 
+    {
         led_value = 1U;
-    } else if (key == 9U) {
+    } 
+    else if (key == 9U) 
+    {
         led_value = 2U;
-    } else if (key == STAR_KEY) {
+    } 
+    else if (key == STAR_KEY) 
+    {
         led_value = 3U;
-    } else if (key == POUND_KEY) {
+    } 
+    else if (key == POUND_KEY) 
+    {
         led_value = 4U;
-    } else {
+    } 
+    else 
+    {
         return;
     }
     LED_PORT->BRR = LED_PINS;
@@ -284,11 +261,7 @@ static void display_key(uint8_t key)
 }
 
 
-/**
- * Configure the system clock.
- *
- * This is ST-generated code and can remain unchanged.
- */
+//STMake code to setup the clocl
 void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -351,10 +324,6 @@ void SystemClock_Config(void)
     }
 }
 
-
-/**
- * Stop execution if clock configuration fails.
- */
 void Error_Handler(void)
 {
     __disable_irq();
